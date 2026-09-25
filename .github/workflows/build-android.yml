@@ -1,6 +1,9 @@
-name: Build MobileI2V Android APK v2
+name: Build MobileI2V Android APK
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -34,65 +37,6 @@ jobs:
         shell: bash
         run: |
           sed -i 's/ IsLooping="[^"]*"//g' src/MobileI2VConsole/Views/ResultPage.xaml
-          echo "ResultPage.xaml patched:"
-          grep -n "MediaElement" src/MobileI2VConsole/Views/ResultPage.xaml || true
-
-      - name: Inspect Android project
-        working-directory: source
-        shell: bash
-        run: |
-          echo "=== PROJECT CONFIG ==="
-          grep -R "ApplicationId\|SupportedOSPlatformVersion\|TargetFramework" -n src/MobileI2VConsole/*.csproj || true
-          echo "=== ANDROID MANIFEST ==="
-          cat src/MobileI2VConsole/Platforms/Android/AndroidManifest.xml || true
-
-      - name: Add startup diagnostics
-        working-directory: source
-        shell: bash
-        run: |
-          python3 - <<'PY2'
-          from pathlib import Path
-
-          p = Path("src/MobileI2VConsole/App.xaml.cs")
-          s = p.read_text()
-
-          print("=== App.xaml.cs ===")
-          print(s[:12000])
-
-          # Replace App.xaml.cs with a diagnostic-safe version.
-          p.write_text('''namespace MobileI2VConsole;
-
-public partial class App : Application
-{
-    public App()
-    {
-        try
-        {
-            InitializeComponent();
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine("STARTUP_CRASH_APPCOMPONENT: " + ex);
-            throw;
-        }
-    }
-
-    protected override Window CreateWindow(IActivationState? activationState)
-    {
-        try
-        {
-            return new Window(new AppShell());
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine("STARTUP_CRASH_APPSHELL: " + ex);
-            throw;
-        }
-    }
-}
-''')
-          print("APP STARTUP DIAGNOSTICS INSTALLED")
-          PY2
 
       - name: Build APK
         working-directory: source
@@ -102,8 +46,7 @@ public partial class App : Application
             -c Release \
             -f net10.0-android \
             -p:AndroidPackageFormat=apk \
-            -p:AndroidKeyStore=false \
-            --no-restore
+            -p:AndroidKeyStore=false
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
