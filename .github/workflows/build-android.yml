@@ -37,6 +37,15 @@ jobs:
           echo "ResultPage.xaml patched:"
           grep -n "MediaElement" src/MobileI2VConsole/Views/ResultPage.xaml || true
 
+      - name: Inspect Android project
+        working-directory: source
+        shell: bash
+        run: |
+          echo "=== PROJECT CONFIG ==="
+          grep -R "ApplicationId\|SupportedOSPlatformVersion\|TargetFramework" -n src/MobileI2VConsole/*.csproj || true
+          echo "=== ANDROID MANIFEST ==="
+          cat src/MobileI2VConsole/Platforms/Android/AndroidManifest.xml || true
+
       - name: Build APK
         working-directory: source
         run: |
