@@ -1,0 +1,49 @@
+name: Build MobileI2V Android APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout MobileI2V source
+        uses: actions/checkout@v4
+        with:
+          repository: himadriHK/MobileI2VConsole
+          path: source
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install Android workload
+        run: dotnet workload install maui-android --ignore-failed-sources
+
+      - name: Restore
+        working-directory: source
+        run: dotnet restore MobileI2VConsole.sln
+
+      - name: Build APK
+        working-directory: source
+        run: |
+          dotnet publish \
+            src/MobileI2VConsole/MobileI2VConsole.csproj \
+            -c Release \
+            -f net10.0-android \
+            -p:AndroidPackageFormat=apk \
+            -p:AndroidKeyStore=false \
+            --no-restore
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MobileI2V-Android-APK
+          path: source/src/MobileI2VConsole/bin/Release/net10.0-android/*.apk
+          if-no-files-found: error
+          retention-days: 7
