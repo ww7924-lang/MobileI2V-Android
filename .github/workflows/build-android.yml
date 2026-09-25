@@ -59,25 +59,39 @@ jobs:
           print("=== App.xaml.cs ===")
           print(s[:12000])
 
-          if "STARTUP_DIAGNOSTICS" not in s:
-              s = s.replace(
-                  "InitializeComponent();",
-                  '''try
-          {
-              InitializeComponent();
-          }
-          catch (Exception ex)
-          {
-              System.Diagnostics.Debug.WriteLine("STARTUP_CRASH: " + ex);
-              throw;
-          }
-          // STARTUP_DIAGNOSTICS''',
-                  1
-              )
-              p.write_text(s)
-              print("STARTUP_DIAGNOSTICS ADDED")
-          else:
-              print("STARTUP_DIAGNOSTICS ALREADY PRESENT")
+          # Replace App.xaml.cs with a diagnostic-safe version.
+          p.write_text('''namespace MobileI2VConsole;
+
+public partial class App : Application
+{
+    public App()
+    {
+        try
+        {
+            InitializeComponent();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("STARTUP_CRASH_APPCOMPONENT: " + ex);
+            throw;
+        }
+    }
+
+    protected override Window CreateWindow(IActivationState? activationState)
+    {
+        try
+        {
+            return new Window(new AppShell());
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("STARTUP_CRASH_APPSHELL: " + ex);
+            throw;
+        }
+    }
+}
+''')
+          print("APP STARTUP DIAGNOSTICS INSTALLED")
           PY2
 
       - name: Build APK
