@@ -29,6 +29,14 @@ jobs:
         working-directory: source
         run: dotnet restore MobileI2VConsole.sln
 
+      - name: Fix .NET 10 XAML compatibility
+        working-directory: source
+        shell: bash
+        run: |
+          sed -i 's/ IsLooping="[^"]*"//g' src/MobileI2VConsole/Views/ResultPage.xaml
+          echo "ResultPage.xaml patched:"
+          grep -n "MediaElement" src/MobileI2VConsole/Views/ResultPage.xaml || true
+
       - name: Build APK
         working-directory: source
         run: |
