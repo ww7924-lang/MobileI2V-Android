@@ -46,6 +46,40 @@ jobs:
           echo "=== ANDROID MANIFEST ==="
           cat src/MobileI2VConsole/Platforms/Android/AndroidManifest.xml || true
 
+      - name: Add startup diagnostics
+        working-directory: source
+        shell: bash
+        run: |
+          python3 - <<'PY2'
+          from pathlib import Path
+
+          p = Path("src/MobileI2VConsole/App.xaml.cs")
+          s = p.read_text()
+
+          print("=== App.xaml.cs ===")
+          print(s[:12000])
+
+          if "STARTUP_DIAGNOSTICS" not in s:
+              s = s.replace(
+                  "InitializeComponent();",
+                  '''try
+          {
+              InitializeComponent();
+          }
+          catch (Exception ex)
+          {
+              System.Diagnostics.Debug.WriteLine("STARTUP_CRASH: " + ex);
+              throw;
+          }
+          // STARTUP_DIAGNOSTICS''',
+                  1
+              )
+              p.write_text(s)
+              print("STARTUP_DIAGNOSTICS ADDED")
+          else:
+              print("STARTUP_DIAGNOSTICS ALREADY PRESENT")
+          PY2
+
       - name: Build APK
         working-directory: source
         run: |
