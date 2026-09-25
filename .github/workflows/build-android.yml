@@ -1,4 +1,4 @@
-name: Build MobileI2V Android APK
+name: Build MobileI2V Android APK v2
 
 on:
   workflow_dispatch:
